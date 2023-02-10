@@ -1,4 +1,6 @@
-# Total Gradient Ascent Descent (TGDA) attack
+## Total Gradient Ascent Descent (TGDA) attack
+
+Official Implementation of Indiscriminate Data Poisoning Attacks on Neural Networks in TMLR (https://openreview.net/forum?id=x4hmIsWu7e).
 
 The code is implemented with python 3.7 and torch 1.6.0. 
 

@@ -26,6 +26,7 @@ def follower_loss(leader, follower, real_data, real_y, noise, noise_y):
     class_labels = torch.cat((real_y, noise_y.float()))
     loss = torch.nn.CrossEntropyLoss()
     return loss(class_scores, class_labels.long())
+    # return loss(fake_scores, noise_y.long())
 
 
 def leader_loss(leader, follower, real_data, real_y):

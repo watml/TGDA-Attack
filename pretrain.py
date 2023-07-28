@@ -9,6 +9,7 @@ from model import *
 from data import *
 from utils import *
 from loss_function import *
+from config import *
 
 # Pretrain on MNIST dataset 
 torch.manual_seed(0)
@@ -16,16 +17,16 @@ torch.manual_seed(0)
 print("==> start pretraining")
 print("==> model will be saved in pretrained folder and diretly used for the initialization of an attack")
 
-device = 'cuda:0'
+device = 'cpu'
 dataset_0 = 'mnist'
 dataset_1 = 'mnist1'
 batch_size = 1000
 train_size = 60000
 test_size=10000
-n_epochs=100
+n_epochs=5
 
 leader = Leader().to(device).double()
-follower = Follower().to(device).double()
+follower = Follower_lr().to(device).double()
 
 # Train dataloader
 dataset_train = get_data(dataset_0,train_size)
@@ -57,14 +58,18 @@ def train(epoch):
         f_update = get_f_update(loss,follower,f_optim,f_step_size)
         for param, update in zip(follower.parameters(), f_update):
             param.data -= update
-        torch.save(follower.state_dict(), './pretrained/classifier_mlp.pt')
+
+        if not os.path.exists(PRETRAINED_PATH):
+            os.makedirs(PRETRAINED_PATH)
+        torch.save(follower.state_dict(), f'{PRETRAINED_PATH}/classifier_mlp.pt')
+        
         total_num += train_loader.batch_size
         total_loss += loss.item() * train_loader.batch_size
         train_bar.set_description('Train Epoch: [{}/{}], Loss: {:.4f}'.format(epoch, n_epochs, total_loss / total_num))
         #print("epoch:{},loss:{}".format(epoch, loss))
         
 def test():
-    follower.load_state_dict(torch.load('./pretrained/classifier_mlp.pt'))
+    follower.load_state_dict(torch.load(f'{PRETRAINED_PATH}/classifier_mlp.pt'))
     # Evaluate on test set
     total_class_samples = 0
     total_class_correct= 0

@@ -11,6 +11,8 @@ from data import *
 from utils import *
 from loss_function import *
 import argparse
+from torchvision.models import resnet18, ResNet18_Weights
+from config import *
 
 
 torch.manual_seed(0)
@@ -74,19 +76,18 @@ def train(leader, follower, loader, device="cuda", epsilon=0.03, epoch=1,
           simultaneous=False,
           save_folder=None, save_iter=2, print_iter=2):
 
-    noise = None
-    noise_y = None
+    total_noise = None
+    total_noise_y = None
     
     start_time = time.time()
 
     for i in range(epoch_start, epoch):
-        if True: 
+        if i > 0: 
             print("{:f} seconds in {:d} epochs".format(time.time() - start_time, i)) 
 
         for idx, data in enumerate(loader):
             real_data = data[0].to(device)
             real_y = data[1].to(device).float()
-            num_poisoned = int(epsilon * len(real_data))
             
             #splitting the training set and the validation set
             
@@ -97,14 +98,18 @@ def train(leader, follower, loader, device="cuda", epsilon=0.03, epoch=1,
             
             # noise and noise_y are predefined as part of the clean set, namely real_data[:num_poisoned],real_y[:num_poisoned]
             
-            noise = torch.load('noise_tensor.pt')
-            noise_y = torch.load('noise_y_tensor.pt')
-                
+            num_poisoned = int(epsilon * len(train_data))
+            noise = train_data[:num_poisoned]
+            noise_y = train_y[:num_poisoned]
+
+            total_noise = torch.cat((total_noise, noise)) if total_noise is not None else noise
+            total_noise_y = torch.cat((total_noise_y, noise_y)) if total_noise_y is not None else noise_y
+
             # define loss function
             def leader_loss_fn(): 
                 return leader_loss(leader, follower, val_data, val_y)
             def follower_loss_fn(): 
-                return follower_loss(leader, follower, real_data, real_y, noise[int(idx*args.batch_size*epsilon):int((idx+1)*args.batch_size*epsilon)], noise_y[int(idx*args.batch_size*epsilon):int((idx+1)*args.batch_size*epsilon)])
+                return follower_loss(leader, follower, train_data, train_y, noise, noise_y)
                      
             # Stackelberg game
             if simultaneous == 0:
@@ -133,7 +138,7 @@ def train(leader, follower, loader, device="cuda", epsilon=0.03, epoch=1,
                         param.data -= update
                         #print(update)
 
-                wandb.log({'epoch': i, 'loss_l':leader_loss_fn(), 'loss_f': follower_loss_fn()})
+                # print(f'epoch: {i}, loss_l: {leader_loss_fn()}, loss_f: {follower_loss_fn()}')
 
         if i % save_iter == 0 and save_folder is not None:
 
@@ -151,6 +156,10 @@ def train(leader, follower, loader, device="cuda", epsilon=0.03, epoch=1,
                        os.path.join(save_folder, "leader-epoch_{:d}.tar".format(i)))
             torch.save({'model_state_dict': follower.state_dict()},
                        os.path.join(save_folder, "follower-epoch_{:d}.tar".format(i)))
+        
+        if i == epoch_start:
+            torch.save(total_noise, os.path.join(save_folder, 'noise_tensor.pt'))
+            torch.save(total_noise_y, os.path.join(save_folder, 'noise_y_tensor.pt'))
 
 
 def get_save_folder(dataset, l_optim, l_step_size, f_num_step, f_optim, f_step_size):
@@ -163,15 +172,17 @@ pre_train=False
   
 # specify which architecture to evaluate here
 leader = Leader().to(device).double()
-follower = Follower_mlp().to(device).double()
+# follower = Follower_lr().to(device).double()
+follower = 
 
 
 epoch_start = 0
 
-follower.load_state_dict(torch.load('./pretrained/classifier_mlp.pt'))
+leader.load_state_dict(torch.load(f'{PRETRAINED_PATH}/leader.pt'))
+# follower.load_state_dict(torch.load(f'{PRETRAINED_PATH}/classifier_mlp.pt'))
 
 dataset = get_data(args.dataset, args.train_size)
-train_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+train_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size)
 
 
 

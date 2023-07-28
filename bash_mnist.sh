@@ -16,15 +16,17 @@ print_iter=2
 
 # # total gradient descent ascent, a.k.a. stackelberg dynamics in Fiez et al 2019
 l_optim=tgd
-l_step_size=0.01 
-f_num_step=20
+l_step_size=1
 l_num_step=1
+
 f_optim=gd
-f_step_size=0.1 
+f_num_step=100
+f_step_size=0.1
 simultaneous=0
+# epsilon=1
 
 
-python pretrain.py
+# python pretrain.py
 python main.py --epoch $epoch \
               --dataset $dataset \
               --train_size $train_size \

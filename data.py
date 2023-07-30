@@ -47,7 +47,7 @@ def get_data(option, train_size):
         dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
 
-    elif option == "mnist1":
+    elif option == "cifar-10-1":
 	transform = transforms.Compose(
     		[transforms.ToTensor(),
      		transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])

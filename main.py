@@ -171,7 +171,7 @@ epoch_start = 0
 follower.load_state_dict(torch.load('./pretrained/classifier_mlp.pt'))
 
 dataset = get_data(args.dataset, args.train_size)
-train_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+train_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
 
 
 
